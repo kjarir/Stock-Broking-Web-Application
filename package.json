@@ -1,0 +1,21 @@
+{
+  "name": "stock-broking-web-application",
+  "version": "1.0.0",
+  "description": "This is a dummy stock broking web application where the user is authorized using the watsapp's API key for OTP. Stock data is fetched using the yahoo finance API key and all the buying the selling processes are dummy.",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^5.0.0-alpha.8",
+    "join": "^3.0.0"
+  }
+}
