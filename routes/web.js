@@ -7,4 +7,4 @@ import { signupController } from '../controller/signupController.js';
 router.get('/login', loginController);
 router.get('/signup', signupController);
 
-export default router;
+export default router; // export the router
