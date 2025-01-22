@@ -1,75 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login Page</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-        }
-        
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .container h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        
-        .form-group button {
-            width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        .form-group button:hover {
-            background-color: #45a049;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CryptoTrade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/stylesheets/auth.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.14/lottie.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h2>Login</h2>
-        <form>
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
+    <div class="auth-container">
+        <div class="auth-form-container">
+            <div class="auth-header">
+                <h1><i class="fas fa-chart-line"></i> CryptoTrade</h1>
+                <p>Welcome back! Please login to your account.</p>
             </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <div class="form-group">
-                <button type="submit">Login</button>
-            </div>
-        </form>
+
+            <form action="/login" method="POST" id="loginForm">
+                <div class="form-group">
+                    <label for="number">Phone Number</label>
+                    <input type="number" id="number" name="number" required placeholder="Enter your phone number">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                </div>
+
+                <button type="submit" class="auth-button">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+
+                <div class="auth-links">
+                    Don't have an account?<a href="/signup">Sign up</a>
+                </div>
+
+                <div class="social-login">
+                    <p>Or continue with</p>
+                    <div class="social-buttons">
+                        <button type="button" class="social-button">
+                            <i class="fab fa-google"></i> Google
+                        </button>
+                        <button type="button" class="social-button">
+                            <i class="fab fa-github"></i> GitHub
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="auth-animation-container">
+            <div id="cryptoAnimation"></div>
+            <div class="floating-coins" id="floatingCoins"></div>
+        </div>
     </div>
+
+    <script>
+        // Initialize Lottie animation
+        const animation = lottie.loadAnimation({
+            container: document.getElementById('cryptoAnimation'),
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            path: 'https://assets3.lottiefiles.com/packages/lf20_xyadoh9h.json' // Crypto trading animation
+        });
+
+        // Create floating coins effect
+        const floatingCoins = document.getElementById('floatingCoins');
+        const coins = ['btc', 'eth', 'usdt', 'bnb'];
+        
+        function createCoin() {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.style.left = Math.random() * 100 + '%';
+            coin.style.animationDuration = (Math.random() * 10 + 5) + 's';
+            coin.style.animationDelay = Math.random() * 5 + 's';
+            floatingCoins.appendChild(coin);
+
+            // Remove coin after animation
+            coin.addEventListener('animationend', () => {
+                coin.remove();
+            });
+        }
+
+        // Create coins periodically
+        setInterval(createCoin, 2000);
+
+        // Create initial set of coins
+        for (let i = 0; i < 10; i++) {
+            createCoin();
+        }
+
+        // Form validation and error handling
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Remove any existing error messages
+            document.querySelectorAll('.error-message').forEach(el => el.remove());
+            
+            const number = document.getElementById('number').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ number, password })
+                });
+
+                // Handle both JSON and redirect responses
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    window.location.href = '/dashboard';
+                } else {
+                    throw new Error(data.error || 'Login failed');
+                }
+            } catch (error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+                loginForm.insertBefore(errorDiv, loginForm.firstChild);
+            }
+        });
+    </script>
 </body>
 </html>

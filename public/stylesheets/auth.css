@@ -1,0 +1,272 @@
+/* Auth Pages Styles */
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: #f8f9fa;
+}
+
+.auth-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100vh;
+}
+
+.auth-form-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 60px;
+  background: white;
+}
+
+.auth-animation-container {
+  background: linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-animation-container::before {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, #00f2fe20 0%, #4facfe20 100%);
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-header {
+  margin-bottom: 40px;
+}
+
+.auth-header h1 {
+  font-size: 2.5em;
+  margin: 0;
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.auth-header p {
+  color: #666;
+  margin: 10px 0 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  position: relative;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #eee;
+  border-radius: 8px;
+  font-size: 1em;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #4facfe;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+.form-group input[type="number"]::-webkit-inner-spin-button,
+.form-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-group input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.form-group .icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 1.1em;
+}
+
+.auth-button {
+  width: 100%;
+  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+  color: white;
+  border: none;
+  padding: 14px 25px;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  font-family: inherit;
+}
+
+.auth-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+}
+
+.auth-links {
+  margin-top: 25px;
+  text-align: center;
+  color: #666;
+}
+
+.auth-links a {
+  color: #4facfe;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+.floating-coins {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.coin {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: url('/images/crypto-icons.svg') no-repeat;
+  opacity: 0.1;
+  animation: float 15s linear infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0.1;
+  }
+}
+
+/* Social Login Buttons */
+.social-login {
+  margin-top: 30px;
+}
+
+.social-login p {
+  text-align: center;
+  color: #666;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.social-login p::before,
+.social-login p::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background: #eee;
+}
+
+.social-login p::before {
+  left: 0;
+}
+
+.social-login p::after {
+  right: 0;
+}
+
+.social-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.social-button {
+  padding: 12px 25px;
+  border: 2px solid #eee;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.social-button:hover {
+  border-color: #4facfe;
+  color: #4facfe;
+  transform: translateY(-2px);
+}
+
+.social-button i {
+  font-size: 1.2em;
+}
+
+/* Error Messages */
+.error-message {
+  color: #ef4444;
+  font-size: 0.9em;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.error-message i {
+  font-size: 0.9em;
+}
+
+/* Success Messages */
+.success-message {
+  color: #22c55e;
+  font-size: 0.9em;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.success-message i {
+  font-size: 0.9em;
+}

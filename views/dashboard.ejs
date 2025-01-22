@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CryptoTrade - Your Cryptocurrency Trading Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/stylesheets/dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <i class="fas fa-chart-line"></i> CryptoTrade
+    </div>
+    <div class="search-container">
+      <input type="text" id="searchCrypto" class="search-box" placeholder="Search cryptocurrencies...">
+    </div>
+    <div class="navbar-right">
+      <div class="wallet-dropdown">
+        <i class="fas fa-wallet"></i>
+        <div class="dropdown-content">
+          <div class="wallet-balance">
+            <div class="balance-label">Available Balance</div>
+            <div class="balance-amount">$10,000.00</div>
+          </div>
+          <div class="wallet-balance">
+            <div class="balance-label">Invested Amount</div>
+            <div class="balance-amount">$5,000.00</div>
+          </div>
+        </div>
+      </div>
+      <div class="profile-dropdown">
+        <i class="fas fa-user-circle"></i>
+        <span style="margin-left: 5px;">Hi, <%= user.name %></span>
+        <div class="dropdown-content">
+          <ul class="profile-menu">
+            <li><i class="fas fa-user"></i>Profile</li>
+            <li><i class="fas fa-history"></i>Transaction History</li>
+            <li><i class="fas fa-cog"></i>Settings</li>
+            <li onclick="window.location.href='/logout'" style="color: #ef4444; cursor: pointer;"><i class="fas fa-sign-out-alt"></i>Logout</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar -->
+  <div class="sidebar">
+    <ul class="crypto-list" id="cryptoList">
+      <!-- Coins will be dynamically populated here -->
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="coin-header" id="coinHeader">
+      <!-- Coin header will be dynamically populated -->
+    </div>
+    <div class="chart-container">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const dropdowns = document.querySelectorAll('.wallet-dropdown, .profile-dropdown');
+      
+      // Close dropdowns when clicking outside
+      document.addEventListener('click', (event) => {
+        dropdowns.forEach(dropdown => {
+          const isClickInside = dropdown.contains(event.target);
+          if (!isClickInside) {
+            dropdown.classList.remove('active');
+            dropdown.querySelector('.dropdown-content').classList.remove('show');
+          }
+        });
+      });
+
+      // Toggle dropdowns on click
+      dropdowns.forEach(dropdown => {
+        const icon = dropdown.querySelector('i');
+        const content = dropdown.querySelector('.dropdown-content');
+        
+        icon.addEventListener('click', (event) => {
+          event.stopPropagation();
+          
+          // Close other dropdowns
+          dropdowns.forEach(other => {
+            if (other !== dropdown) {
+              other.classList.remove('active');
+              other.querySelector('.dropdown-content').classList.remove('show');
+            }
+          });
+          
+          // Toggle current dropdown
+          dropdown.classList.toggle('active');
+          content.classList.toggle('show');
+        });
+      });
+
+      // Handle menu item clicks
+      const menuItems = document.querySelectorAll('.profile-menu li');
+      menuItems.forEach(item => {
+        item.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const action = item.textContent.trim().toLowerCase();
+          
+          switch(action) {
+            case 'logout':
+              if(confirm('Are you sure you want to logout?')) {
+                // Add logout logic here
+                console.log('Logging out...');
+              }
+              break;
+            case 'profile':
+              // Add profile navigation logic
+              console.log('Navigating to profile...');
+              break;
+            case 'transaction history':
+              // Add transaction history navigation logic
+              console.log('Navigating to transaction history...');
+              break;
+            case 'settings':
+              // Add settings navigation logic
+              console.log('Navigating to settings...');
+              break;
+          }
+        });
+      });
+    });
+
+    const apiUrl = 'https://api.coingecko.com/api/v3';
+    const searchInput = document.getElementById('searchCrypto');
+    const cryptoList = document.getElementById('cryptoList');
+    const coinHeader = document.getElementById('coinHeader');
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    let cryptoData = [];
+    let currentChart = null;
+    let selectedCoin = null;
+
+    const sleep = (seconds) => new Promise(resolve => setTimeout(resolve, seconds * 1000));
+
+    const fetchWithRetry = async (endpoint, maxRetries = 3) => {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const response = await fetch(`${apiUrl}${endpoint}`);
+          if (response.status === 429) {
+            const retryAfter = response.headers.get('retry-after') || 60;
+            console.log(`Rate limited. Waiting ${retryAfter} seconds before retrying...`);
+            await sleep(parseInt(retryAfter));
+            continue;
+          }
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return await response.json();
+        } catch (error) {
+          if (i === maxRetries - 1) throw error;
+          console.log(`Attempt ${i + 1} failed. Retrying...`);
+          await sleep(2); // Wait 2 seconds between retries
+        }
+      }
+      throw new Error('Max retries reached');
+    };
+
+    const fetchCryptoList = async () => {
+      try {
+        const data = await fetchWithRetry('/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1');
+        cryptoData = data;
+        renderCryptoList(cryptoData);
+        if (cryptoData.length > 0 && !selectedCoin) {
+          selectCoin(cryptoData[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching cryptocurrency list:', error);
+        // Show error message to user
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'error-message';
+        errorMessage.textContent = 'Unable to fetch data. Please try again later.';
+        cryptoList.appendChild(errorMessage);
+      }
+    };
+
+    const renderCryptoList = (data) => {
+      cryptoList.innerHTML = '';
+      data.forEach(crypto => {
+        const li = document.createElement('li');
+        li.className = `crypto-item ${selectedCoin?.id === crypto.id ? 'active' : ''}`;
+        li.innerHTML = `
+          <img src="${crypto.image}" alt="${crypto.name}" class="crypto-icon">
+          <div class="crypto-info">
+            <div class="crypto-name">${crypto.symbol.toUpperCase()}</div>
+            <div class="crypto-price">$${crypto.current_price.toFixed(2)}</div>
+          </div>
+        `;
+        li.addEventListener('click', () => selectCoin(crypto));
+        cryptoList.appendChild(li);
+      });
+    };
+
+    const fetchHistoricalData = async (coinId) => {
+      try {
+        const data = await fetchWithRetry(`/coins/${coinId}/market_chart?vs_currency=usd&days=180&interval=daily`);
+        return data.prices;
+      } catch (error) {
+        console.error('Error fetching historical data:', error);
+        return [];
+      }
+    };
+
+    const fetchCoinDetails = async (coinId) => {
+      try {
+        const data = await fetchWithRetry(`/coins/${coinId}`);
+        return data;
+      } catch (error) {
+        console.error('Error fetching coin details:', error);
+        return null;
+      }
+    };
+
+    const updateCoinHeader = async (coin) => {
+      const details = await fetchCoinDetails(coin.id);
+      if (!details) return;
+
+      const priceChangeClass = coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative';
+      const priceChangeSign = coin.price_change_percentage_24h >= 0 ? '+' : '';
+
+      coinHeader.innerHTML = `
+        <div class="coin-title">
+          <img src="${coin.image}" alt="${coin.name}">
+          <div class="coin-name-container">
+            <h1>${coin.name}</h1>
+            <span class="coin-symbol">${coin.symbol.toUpperCase()}</span>
+          </div>
+        </div>
+        <div class="price-container">
+          <div class="current-price">$${coin.current_price.toFixed(2)}</div>
+          <span class="price-change ${priceChangeClass}">
+            ${priceChangeSign}${coin.price_change_percentage_24h.toFixed(2)}%
+          </span>
+          <div class="trading-buttons">
+            <button class="btn btn-buy" onclick="handleTrade('buy', '${coin.id}')">
+              <i class="fas fa-arrow-up"></i>Buy
+            </button>
+            <button class="btn btn-sell" onclick="handleTrade('sell', '${coin.id}')">
+              <i class="fas fa-arrow-down"></i>Sell
+            </button>
+          </div>
+        </div>
+        <div class="coin-details">
+          <div class="details-grid">
+            <div class="detail-item">
+              <div class="detail-label">Market Cap</div>
+              <div class="detail-value">$${details.market_data.market_cap.usd.toLocaleString()}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">24h Volume</div>
+              <div class="detail-value">$${details.market_data.total_volume.usd.toLocaleString()}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">24h High</div>
+              <div class="detail-value">$${details.market_data.high_24h.usd.toLocaleString()}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">24h Low</div>
+              <div class="detail-value">$${details.market_data.low_24h.usd.toLocaleString()}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Circulating Supply</div>
+              <div class="detail-value">${details.market_data.circulating_supply.toLocaleString()} ${coin.symbol.toUpperCase()}</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Total Supply</div>
+              <div class="detail-value">${details.market_data.total_supply ? details.market_data.total_supply.toLocaleString() : 'N/A'} ${coin.symbol.toUpperCase()}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    const createChart = (labels, prices) => {
+      if (currentChart) {
+        currentChart.destroy();
+      }
+
+      // Calculate price changes for coloring
+      const priceChanges = prices.map((price, index) => {
+        if (index === 0) return 0;
+        return price - prices[index - 1];
+      });
+
+      currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Price (USD)',
+            data: prices,
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.1,
+            segment: {
+              borderColor: context => {
+                const index = context.p0DataIndex;
+                return priceChanges[index + 1] >= 0 ? 'rgba(75, 192, 112, 1)' : 'rgba(255, 99, 132, 1)';
+              }
+            },
+            backgroundColor: 'rgba(75, 192, 112, 0.1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animations: {
+            tension: {
+              duration: 100,
+              easing: 'linear'
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'USD'
+                    }).format(context.parsed.y);
+                  }
+                  return label;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                maxTicksLimit: 12,
+                font: {
+                  size: 11
+                }
+              }
+            },
+            y: {
+              position: 'right',
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              },
+              ticks: {
+                callback: function(value) {
+                  return '$' + value.toLocaleString();
+                },
+                font: {
+                  size: 11
+                }
+              }
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          }
+        }
+      });
+    };
+
+    const selectCoin = async (coin) => {
+      selectedCoin = coin;
+      renderCryptoList(cryptoData);
+      updateCoinHeader(coin);
+
+      const historicalData = await fetchHistoricalData(coin.id);
+      const labels = historicalData.map(data => 
+        new Date(data[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      );
+      const prices = historicalData.map(data => data[1]);
+      createChart(labels, prices);
+    };
+
+    // Search functionality
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      const filteredData = cryptoData.filter(crypto => 
+        crypto.name.toLowerCase().includes(searchTerm) || 
+        crypto.symbol.toLowerCase().includes(searchTerm)
+      );
+      renderCryptoList(filteredData);
+    });
+
+    // Add trading functionality
+    const handleTrade = (action, coinId) => {
+      const coin = cryptoData.find(c => c.id === coinId);
+      if (!coin) return;
+
+      const amount = prompt(`Enter amount of ${coin.symbol.toUpperCase()} to ${action}:`);
+      if (!amount || isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+
+      const total = amount * coin.current_price;
+      const confirmMessage = `Are you sure you want to ${action} ${amount} ${coin.symbol.toUpperCase()} for $${total.toFixed(2)}?`;
+      
+      if (confirm(confirmMessage)) {
+        // Here you would typically make an API call to your backend to process the trade
+        alert(`${action.toUpperCase()} order placed successfully!`);
+      }
+    };
+
+    // Initial load
+    fetchCryptoList();
+
+    // Refresh data every 5 minutes
+    setInterval(fetchCryptoList, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
