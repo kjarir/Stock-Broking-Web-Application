@@ -8,7 +8,6 @@ A modern, secure, and user-friendly web application for stock broking services. 
 - Secure user registration and login system
 - Phone number-based authentication
 - Session management for secure access
-- Password strength indicator for better security
 - Automatic logout on session expiry
 
 ### 2. User Interface
@@ -75,7 +74,7 @@ npm install
 
 4. Start the application:
 ```bash
-npm start
+npm run dev
 ```
 
 The application will be available at `http://localhost:3000`
